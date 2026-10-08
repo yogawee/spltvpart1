@@ -333,7 +333,7 @@
       },
       {
         step: 6,
-        type": "quiz",
+        type: "quiz",
         title: "Analisis Kasus 5: Coretan Anton (Logika Shortcut)",
         student: "Anton",
         wrong_answer_html: "2x + y + z = 110<br>x + 2y + z = 130<br>x + y + 2z = 140<br>----------------- (+)<br>4x + 4y + 4z = 380 &rArr; x + y + z = 95<br><br>Maka:<br>x = 110 - 95 = 15<br>y = 130 - 95 = 35<br>z = 140 - 95 = 45",
@@ -505,7 +505,7 @@
     function selectOption(optIndex) {
       const currentIdx = state.currentStep;
       if (MISSION_DATA[currentIdx].type !== 'quiz') return;
-      if (state.answers[currentIdx] !== undefined) return; // Lock
+      if (state.answers[currentIdx] !== undefined) return;
 
       state.answers[currentIdx] = optIndex;
       state.scores[currentIdx] = (optIndex === MISSION_DATA[currentIdx].correct_index);
