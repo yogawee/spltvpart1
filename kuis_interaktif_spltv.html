@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Misi Analisis Kesalahan: SPLTV</title>
+  
+  <style>
+    /* Google Fonts Import */
+    @import url('https://fonts.googleapis.com/css2?family=Google+Sans+Flex:ital,wght@0,300..700;1,300..700&family=Google+Sans+Code:ital,wght,MONO@0,300..700,0..1;1,300..700,0..1&display=swap');
+
+    /* Core Design Tokens */
+    :root {
+      --ff-sans: 'Google Sans Flex', sans-serif;
+      --ff-mono: 'Google Sans Code', monospace;
+      --surface: #fdfcfc;
+      --surface-dim: #f2f0f0;
+      --surface-bright: #ffffff;
+      --surface-container: #f2f0f0;
+      --surface-container-high: #e6e6e6;
+      --on-surface: #000000;
+      --on-surface-variant: rgba(0, 0, 0, 0.55);
+      --primary: #3186ff;
+      --primary-container: #dcf1ff;
+      --accent-fixed: #3186ff;
+      --positive: #008052;
+      --positive-container: #daf9d4;
+      --error: #de2d29;
+      --error-container: #ffdeec;
+      --outline: #727676;
+      --stroke-default: #e3e3e3;
+    }
+
+    /* Base Layout */
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: var(--ff-sans);
+      background: var(--surface);
+      color: var(--on-surface);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .widget-container {
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+      min-height: 100vh;
+      padding: 24px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Components */
+    .header-card {
+      background: var(--surface-dim);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .step-badge, .score-badge {
+      font-family: var(--ff-mono);
+      font-size: 13px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .step-badge {
+      background: var(--primary-container);
+      color: var(--accent-fixed);
+      font-weight: 600;
+    }
+
+    .score-badge {
+      background: var(--surface-bright);
+      border: 1px solid var(--stroke-default);
+    }
+
+    .progress-bar-container {
+      width: 100%;
+      height: 6px;
+      background: var(--surface-container-high);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--primary);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    .problem-box {
+      background: var(--surface-container);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .scratchpad-card {
+      background: var(--surface-bright);
+      border: 1px dashed var(--outline);
+      border-radius: 12px;
+      padding: 16px;
+      margin-block: 8px;
+    }
+
+    .scratchpad-title {
+      font-family: var(--ff-mono);
+      font-size: 13px;
+      color: var(--on-surface-variant);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .math-text {
+      font-family: var(--ff-mono);
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .options-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .option-card {
+      background: var(--surface-bright);
+      border: 1px solid var(--stroke-default);
+      border-radius: 12px;
+      padding: 12px 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+
+    .option-card:hover { background: var(--surface-container-high); }
+    .option-card.is-selected { border-color: var(--primary); background: var(--primary-container); }
+    .option-card.is-correct { border-color: var(--positive); background: var(--positive-container); }
+    .option-card.is-wrong { border-color: var(--error); background: var(--error-container); }
+
+    .option-radio {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 2px solid var(--outline);
+      margin-top: 2px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+    }
+
+    .option-card.is-selected .option-radio {
+      border-color: var(--accent-fixed);
+      background: var(--accent-fixed);
+    }
+
+    .option-radio::after {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--surface-bright);
+      display: none;
+    }
+
+    .option-card.is-selected .option-radio::after { display: block; }
+
+    .explanation-card {
+      background: var(--surface-dim);
+      border-left: 4px solid var(--primary);
+      border-radius: 0 12px 12px 0;
+      padding: 12px 16px;
+      margin-top: 12px;
+      display: none;
+    }
+
+    .explanation-card.is-visible { display: block; }
+
+    .nav-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .lumi-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 40px;
+      padding: 0 20px;
+      font-family: var(--ff-sans);
+      font-size: 14px;
+      font-weight: 500;
+      border-radius: 999px;
+      border: 1px solid var(--stroke-default);
+      background: var(--surface-bright);
+      color: var(--on-surface);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .lumi-btn:hover:not(:disabled) { background: var(--surface-container-high); }
+    .lumi-btn-primary { background: var(--primary); color: white; border-color: transparent; }
+    .lumi-btn-primary:hover:not(:disabled) { background: #1a6fe6; }
+    .lumi-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .takeaway-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+    .takeaway-item { display: flex; align-items: flex-start; gap: 8px; font-size: 14px; line-height: 1.4; }
+    .takeaway-bullet { color: var(--primary); font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="widget-container">
+    <div class="header-card">
+      <div class="header-top">
+        <span id="step-badge" class="step-badge">Tahap 1 / 8</span>
+        <span id="score-badge" class="score-badge">Skor Diagnosis: 0/6</span>
+      </div>
+      <div class="progress-bar-container">
+        <div id="progress-fill" class="progress-bar-fill"></div>
+      </div>
+      <h2 id="step-title" style="margin: 4px 0 0 0; font-size: 20px;">Misi Analisis Kesalahan: SPLTV</h2>
+    </div>
+
+    <div id="content-zone">
+      <!-- Dynamic step content injected here -->
+    </div>
+
+    <div class="nav-actions">
+      <button id="btn-prev" class="lumi-btn" style="visibility: hidden;">Kembali</button>
+      <button id="btn-next" class="lumi-btn lumi-btn-primary" disabled>Mulai Diagnosis</button>
+    </div>
+  </div>
+
+  <script>
+    // Data Misi untuk SPLTV
+    const MISSION_DATA = [
+      {
+        step: 1,
+        type: "intro",
+        title: "Misi Analisis Kesalahan: SPLTV",
+        intro_text: "Halo, Siswa-siswi Kelas XII yang hebat! Mari asah insting analitismu pada materi Sistem Persamaan Linear Tiga Variabel (SPLTV). Soal cerita seringkali menjebak jika kita tidak teliti dalam pemodelan awal maupun eliminasi.",
+        problem: {
+          text: "Sebuah toko elektronik menjual 3 jenis paket lampu LED:<br>&bull; Paket A: 2 lampu 5W, 1 lampu 10W, 1 lampu 15W seharga Rp 110.000<br>&bull; Paket B: 1 lampu 5W, 2 lampu 10W, 1 lampu 15W seharga Rp 130.000<br>&bull; Paket C: 1 lampu 5W, 1 lampu 10W, 2 lampu 15W seharga Rp 140.000<br><br>Tentukan harga masing-masing lampu 5W (x), 10W (y), dan 15W (z)!"
+        },
+        instruction: "Tugasmu adalah mendiagnosis 6 kesalahan logika dan kecerobohan yang dilakukan siswa fiktif. Sudah siap?"
+      },
+      {
+        step: 2,
+        type: "quiz",
+        title: "Analisis Kasus 1: Coretan Budi (Pemodelan)",
+        student: "Budi",
+        wrong_answer_html: "Persamaan Paket A: 5x + 10y + 15z = 110.000<br>Persamaan Paket B: 5x + 20y + 15z = 130.000<br>Persamaan Paket C: 5x + 10y + 30z = 140.000",
+        question: "Budi mencoba membuat model matematika dari soal cerita tersebut, namun persamaannya salah total. Mengapa?",
+        options: [
+          "Budi mengalikan jumlah lampu dengan daya watt-nya, padahal variabel x, y, z mewakili harga per buah, bukan harga per watt.",
+          "Budi lupa menyertakan variabel pada total harga di ruas kanan persamaan.",
+          "Budi seharusnya membagi total harga dengan total daya watt sebelum menyusun persamaannya."
+        ],
+        correct_index: 0,
+        explanation: "Tepat! Ini adalah kesalahan konseptual (HOTS) yang paling umum. Siswa sering terkecoh oleh angka '5W, 10W, 15W' dan memasukkannya sebagai koefisien. Padahal angka tersebut hanyalah *label/nama* barang. Koefisien yang benar adalah jumlah barangnya: 2x + y + z = 110.000."
+      },
+      {
+        step: 3,
+        type: "quiz",
+        title: "Analisis Kasus 2: Coretan Siti (Tanda Eliminasi)",
+        student: "Siti",
+        wrong_answer_html: "2x + y + z = 110<br>x + 2y + z = 130<br>----------------- (-)<br>x + y = -20",
+        question: "Siti melakukan eliminasi variabel z dari persamaan (1) dan (2) dalam hitungan ribuan, namun hasilnya keliru. Di mana letak kesalahannya?",
+        options: [
+          "Siti salah mengurangkan suku y; y - 2y seharusnya bernilai negatif y (-y), bukan +y.",
+          "Hasil pengurangan konstanta 110 - 130 seharusnya positif 20, bukan -20.",
+          "Siti tidak boleh langsung mengeliminasi z tanpa menyamakan koefisien x terlebih dahulu."
+        ],
+        correct_index: 0,
+        explanation: "Jeli sekali! Mengurangkan bentuk aljabar membutuhkan ketelitian tanda. y dikurangi 2y adalah -y. Siti menuliskannya sebagai +y, sehingga persamaan barunya (x + y = -20) akan membuat seluruh perhitungan ke bawah menjadi salah total."
+      },
+      {
+        step: 4,
+        type: "quiz",
+        title: "Analisis Kasus 3: Coretan Doni (Distribusi Substitusi)",
+        student: "Doni",
+        wrong_answer_html: "Dari pers (1): z = 110 - 2x - y<br>Substitusi ke pers (2):<br>x + 2y + (110 - 2x - y) = 130<br>x + 2y + 110 - 2x + y = 130<br>-x + 3y = 20",
+        question: "Doni lebih suka metode substitusi. Namun ia melakukan sebuah 'silly mistake' saat menjabarkan kurungnya. Apa itu?",
+        options: [
+          "Doni memindahkan 110 ke ruas kanan dengan tanda positif, sehingga hasilnya menjadi 130 + 110 = 240.",
+          "Tanda negatif pada -y di dalam kurung secara keliru berubah menjadi +y saat kurungnya dibuka.",
+          "Doni seharusnya mengalikan seluruh persamaan dengan -1 sebelum membuka kurungnya."
+        ],
+        correct_index: 1,
+        explanation: "Mantap! Tanda positif (+) di depan kurung tidak akan mengubah tanda di dalamnya. Seharusnya tetap -y. Kesalahan ceroboh mengubah -y menjadi +y membuat Doni mendapatkan 3y padahal seharusnya 2y - y = y."
+      },
+      {
+        step: 5,
+        type: "quiz",
+        title: "Analisis Kasus 4: Coretan Rina (Mengalikan Persamaan)",
+        student: "Rina",
+        wrong_answer_html: "Eliminasi y dari (2) dan (3):<br>(2) x + 2y + z = 130 &nbsp;&nbsp;&nbsp;| &times;1 | &rArr; x + 2y + z = 130<br>(3) x + y + 2z = 140 &nbsp;&nbsp;&nbsp;| &times;2 | &rArr; 2x + 2y + 2z = 280",
+        question: "Rina ingin mengeliminasi variabel y. Langkahnya mengalikan persamaan ketiga dengan 2 sudah benar, tapi lihat hasilnya secara teliti. Dimana salahnya?",
+        options: [
+          "Rina lupa mengalikan koefisien z pada persamaan ketiga dengan 2, seharusnya menjadi 4z.",
+          "Rina seharusnya mengalikan persamaan (2) dengan 2 dan persamaan (3) dengan 1.",
+          "Konstanta 140 jika dikalikan 2 seharusnya menghasilkan 260, bukan 280."
+        ],
+        correct_index: 0,
+        explanation: "Super Teliti! Saat mengalikan sebuah persamaan, *seluruh* suku dari ujung kiri hingga ujung kanan harus dikalikan secara adil. Rina mengalikan x, y, dan konstantanya, tapi lupa mengalikan suku 2z. Seharusnya menjadi 4z."
+      },
+      {
+        step: 6,
+        type": "quiz",
+        title: "Analisis Kasus 5: Coretan Anton (Logika Shortcut)",
+        student: "Anton",
+        wrong_answer_html: "2x + y + z = 110<br>x + 2y + z = 130<br>x + y + 2z = 140<br>----------------- (+)<br>4x + 4y + 4z = 380 &rArr; x + y + z = 95<br><br>Maka:<br>x = 110 - 95 = 15<br>y = 130 - 95 = 35<br>z = 140 - 95 = 45",
+        question: "Wah, Anton menemukan shortcut yang cerdas! Ia berhasil menemukan bahwa x+y+z = 95. Bagaimana menurutmu tentang langkah logika Anton selanjutnya?",
+        options: [
+          "Konstanta 380 dibagi 4 seharusnya bernilai 85, bukan 95.",
+          "Shortcut tersebut tidak valid secara matematis untuk mencari nilai tunggal variabel dalam SPLTV.",
+          "Logika Anton BENAR 100%! Tidak ada yang salah dengan perhitungannya."
+        ],
+        correct_index: 2,
+        explanation: "Kejutan! Kamu tidak terkecoh. Logika Anton ini 100% BENAR dan merupakan salah satu trik 'Super Cepat' (HOTS) untuk SPLTV berbentuk simetris. Persamaan (1) adalah 2x+y+z = 110. Itu sama saja dengan x + (x+y+z) = 110. Substitusi (x+y+z)=95, didapat x + 95 = 110. Hasilnya x = 15. Anton genius!"
+      },
+      {
+        step: 7,
+        type: "quiz",
+        title: "Analisis Kasus 6: Coretan Maya (Uji Jawaban)",
+        student: "Maya",
+        wrong_answer_html: "Hasil tebakan: x = 20, y = 30, z = 40<br>Cek ke persamaan 1:<br>2(20) + 30 + 40 = 40 + 30 + 40 = 110.<br>Hasilnya cocok! Maka HP = {20, 30, 40} pasti benar.",
+        question: "Maya merasa tebakan jawabannya sudah pasti benar karena angkanya cocok saat dimasukkan ke persamaan pertama. Apa miskonsepsi fatal Maya?",
+        options: [
+          "Maya salah menghitung penjumlahan 40 + 30 + 40, yang seharusnya berjumlah 100.",
+          "Solusi SPLTV harus memenuhi KETIGA persamaan secara bersamaan, bukan hanya salah satu persamaan saja.",
+          "Angka {20, 30, 40} bukanlah bilangan genap, sehingga tidak valid sebagai solusi SPLTV."
+        ],
+        correct_index: 1,
+        explanation: "Sangat Tepat! Ini adalah miskonsepsi fatal siswa saat ujian: hanya melakukan cross-check pada SATU persamaan. Sebuah titik (x,y,z) hanya menjadi solusi SPLTV jika ia memuaskan *ketiga* persamaan. Jika dimasukkan ke persamaan 2: 20 + 2(30) + 40 = 120 (TIDAK COCOK dengan 130)."
+      },
+      {
+        step: 8,
+        type: "outro",
+        title: "Misi Selesai, Ahli SPLTV!",
+        outro_text: "Luar Biasa! Kamu telah mengidentifikasi 6 jebakan pemodelan dan operasi SPLTV. Dari terkecoh label vs jumlah, salah tanda minus, hingga salah metode cross-check.",
+        takeaways: [
+          "Jangan jadikan 'label satuan' sebagai koefisien persamaan.",
+          "Hati-hati dengan tanda (-) saat pengurangan eliminasi maupun substitusi kurung.",
+          "Pengali eliminasi harus didistribusikan ke SELURUH suku dari kiri ke kanan.",
+          "SPLTV simetris bisa dikerjakan dengan trik jumlahan total (x+y+z).",
+          "Selalu cross-check jawabanmu minimal di DUA persamaan yang berbeda."
+        ],
+        final_answer: "x = 15, y = 35, z = 45"
+      }
+    ];
+
+    // Reactive State
+    const state = {
+      currentStep: 0,
+      answers: {},
+      scores: {}
+    };
+
+    function renderProblemReminder() {
+      const p = MISSION_DATA[0].problem;
+      return `
+        <div class="problem-box" style="margin-bottom: 16px;">
+          <strong>Reminder Soal Utama:</strong><br>
+          <div style="font-family: var(--ff-mono); font-size: 13px; margin-top: 6px;">${p.text}</div>
+        </div>
+      `;
+    }
+
+    function renderStepContent() {
+      const data = MISSION_DATA[state.currentStep];
+      const container = document.getElementById('content-zone');
+
+      if (data.type === 'intro') {
+        const p = data.problem;
+        container.innerHTML = `
+          <p style="margin-top: 0; font-size: 16px; line-height: 1.5;">${data.intro_text}</p>
+          <div class="problem-box" style="margin-block: 16px;">
+            <p style="margin: 0 0 8px 0; font-size: 16px;"><strong>Soal Utama:</strong></p>
+            <div style="font-family: var(--ff-mono); font-size: 14px;">${p.text}</div>
+          </div>
+          <p style="color: var(--on-surface-variant);">${data.instruction}</p>
+        `;
+      } else if (data.type === 'quiz') {
+        const chosen = state.answers[state.currentStep];
+        const isAnswered = chosen !== undefined;
+        const isCorrect = isAnswered && chosen === data.correct_index;
+
+        const optionsHTML = data.options.map((opt, idx) => {
+          let cardClass = "option-card";
+          if (isAnswered) {
+            if (idx === data.correct_index) cardClass += " is-correct";
+            else if (idx === chosen) cardClass += " is-wrong";
+          } else if (idx === chosen) {
+            cardClass += " is-selected";
+          }
+
+          return `
+            <div class="${cardClass}" onclick="selectOption(${idx})">
+              <div class="option-radio"></div>
+              <div style="flex: 1; font-size: 15px; line-height: 1.4;">${opt}</div>
+            </div>
+          `;
+        }).join('');
+
+        container.innerHTML = `
+          ${renderProblemReminder()}
+          <div class="scratchpad-card">
+            <div class="scratchpad-title">Coretan Jawaban ${data.student} ${data.correct_index===2 && state.currentStep===5 ? '(Analisis Trik)' : '(Mengandung Kesalahan)'}:</div>
+            <div class="math-text">${data.wrong_answer_html}</div>
+          </div>
+          <p style="margin: 16px 0 8px 0; font-size: 18px; font-weight: 600;">${data.question}</p>
+          <div class="options-group">
+            ${optionsHTML}
+          </div>
+          <div class="explanation-card ${isAnswered ? 'is-visible' : ''}">
+            <p style="margin: 0 0 4px 0; font-weight: bold; color: ${isCorrect ? 'var(--positive)' : 'var(--error)'};">
+              ${isCorrect ? 'Diagnosis Tepat!' : 'Diagnosis Kurang Tepat'}
+            </p>
+            <p style="margin: 0; font-size: 15px; line-height: 1.5;">${data.explanation}</p>
+          </div>
+        `;
+      } else if (data.type === 'outro') {
+        const takeawayHTML = data.takeaways.map(t => `
+          <div class="takeaway-item">
+            <span class="takeaway-bullet">&bull;</span>
+            <span class="math-text" style="font-size: 14px;">${t}</span>
+          </div>
+        `).join('');
+
+        container.innerHTML = `
+          <p style="margin-top: 0; font-size: 16px; line-height: 1.5;">${data.outro_text}</p>
+          <div class="scratchpad-card" style="border-style: solid; border-color: var(--primary);">
+            <div class="scratchpad-title">Rangkuman Insight Penting:</div>
+            <div class="takeaway-list">
+              ${takeawayHTML}
+            </div>
+          </div>
+          <div class="problem-box" style="margin-top: 16px;">
+            <strong>Tantangan Terakhir:</strong><br>
+            Ambil selembar kertas, dan kerjakan ulang soal awal secara utuh berdasarkan insight yang baru saja kamu temukan.<br>
+            <em style="color: var(--on-surface-variant); font-size: 13px;">(Pencocokan jawaban: Harga satuan lampu tersebut adalah ${data.final_answer} dalam ribuan)</em>.
+          </div>
+        `;
+      }
+    }
+
+    function updateHeaderAndNav() {
+      const totalSteps = MISSION_DATA.length;
+      const currentIdx = state.currentStep;
+      const data = MISSION_DATA[currentIdx];
+
+      document.getElementById('step-badge').textContent = `Tahap ${currentIdx + 1} / ${totalSteps}`;
+      document.getElementById('step-title').textContent = data.title;
+      document.getElementById('progress-fill').style.width = `${((currentIdx + 1) / totalSteps) * 100}%`;
+
+      const totalCorrect = Object.values(state.scores).filter(Boolean).length;
+      document.getElementById('score-badge').textContent = `Skor Diagnosis: ${totalCorrect}/6`;
+
+      const btnPrev = document.getElementById('btn-prev');
+      const btnNext = document.getElementById('btn-next');
+
+      btnPrev.style.visibility = currentIdx > 0 ? 'visible' : 'hidden';
+
+      if (data.type === 'intro') {
+        btnNext.textContent = 'Mulai Diagnosis';
+        btnNext.disabled = false;
+      } else if (data.type === 'quiz') {
+        const isAnswered = state.answers[currentIdx] !== undefined;
+        btnNext.textContent = currentIdx === totalSteps - 2 ? 'Lihat Hasil Misi' : 'Kasus Selanjutnya';
+        btnNext.disabled = !isAnswered;
+      } else if (data.type === 'outro') {
+        btnNext.textContent = 'Ulangi Misi';
+        btnNext.disabled = false;
+      }
+    }
+
+    function selectOption(optIndex) {
+      const currentIdx = state.currentStep;
+      if (MISSION_DATA[currentIdx].type !== 'quiz') return;
+      if (state.answers[currentIdx] !== undefined) return; // Lock
+
+      state.answers[currentIdx] = optIndex;
+      state.scores[currentIdx] = (optIndex === MISSION_DATA[currentIdx].correct_index);
+      
+      renderStepContent();
+      updateHeaderAndNav();
+    }
+
+    // Nav Listeners
+    document.getElementById('btn-prev').addEventListener('click', () => {
+      if (state.currentStep > 0) {
+        state.currentStep--;
+        renderStepContent();
+        updateHeaderAndNav();
+      }
+    });
+
+    document.getElementById('btn-next').addEventListener('click', () => {
+      if (state.currentStep < MISSION_DATA.length - 1) {
+        state.currentStep++;
+      } else {
+        state.currentStep = 0;
+        state.answers = {};
+        state.scores = {};
+      }
+      renderStepContent();
+      updateHeaderAndNav();
+    });
+
+    // Init
+    renderStepContent();
+    updateHeaderAndNav();
+  </script>
+</body>
+</html>
